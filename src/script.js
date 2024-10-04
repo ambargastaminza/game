@@ -17,13 +17,6 @@ var config = {
     }
 };
 
-
-window.addEventListener("click", () => {
-    if(game.sound.context,state === "suspended") {
-        game.sound.context.resume();
-    };
-})
-
 var game = new Phaser.Game(config);
 
 var platforms;
@@ -33,6 +26,10 @@ var player_1;
 var enemy_1;
 
 var playerHealth = 100;
+
+var enemyHealth = 100;
+
+var playerScore = 0;
 
 function preload() {
     //fondo
@@ -47,8 +44,8 @@ function preload() {
 
     //enemigo
     this.load.spritesheet("enemy_1", "Assets/Goblin/Goblin.png", {
-        frameWidth:
-        frameHeight:
+        frameWidth: 151,
+        frameHeight: 119
     });
 
 
@@ -98,18 +95,15 @@ function create(){
 
 
     //jugador
-    player_1 = this.physics.add.sprite(100, 350, "player").setScale(2);
+    player_1 = this.physics.add.sprite(100, 350, "player_1").setScale(2);
     player_1.setCollideWorldBounds(true);
     player_1.setBounce(0.2);
     this.physics.add.collider(player_1, platforms);
     player_1.body.setSize(22, 35, true);
-
-    //enemigos
-
-
+    
     this.anims.create({
         key: "stand",
-        frames: this.anims.generateFrameNumbers("player", {start: 0, end: 5}),
+        frames: this.anims.generateFrameNumbers("player_1", {start: 0, end: 5}),
         frameRate: 6,
         repeat: -1
     });
@@ -117,7 +111,7 @@ function create(){
 
     this.anims.create({
         key: "run",
-        frames: this.anims.generateFrameNumbers("player", {start: 6, end: 14}),
+        frames: this.anims.generateFrameNumbers("player_1", {start: 6, end: 14}),
         frameRate: 10,
         repeat: -1
     });
@@ -125,7 +119,7 @@ function create(){
 
     this.anims.create({
         key: "attack",
-        frames: this.anims.generateFrameNumbers("player", {start: 15, end: 25}),
+        frames: this.anims.generateFrameNumbers("player_1", {start: 15, end: 25}),
         frameRate: 10,
         repeat: 0
     })
@@ -133,7 +127,7 @@ function create(){
 
     this.anims.create({
         key: "die",
-        frames: this.anims.generateFrameNumbers("player", {start: 26, end: 29}),
+        frames: this.anims.generateFrameNumbers("player_1", {start: 26, end: 29}),
         frameRate: 10,
         repeat: -1
     })
@@ -142,8 +136,8 @@ function create(){
     cursors = this.input.keyboard.createCursorKeys();
 
 
-    player_1.anims.play("stand");
-    player_1.setVelocityX(0)
+    //player_1.anims.play("stand");
+    //player_1.setVelocityX(0);
 
 
     player_1.body.setGravityY(300);
@@ -154,12 +148,34 @@ function create(){
     });
     
 
+        //enemigos
+        enemy_1 = this.physics.add.sprite(600, 350, "enemy_1").setScale(2);
+        enemy_1.setCollideWorldBounds(true);
+        this.physics.add.collider(enemy_1, platforms);
+        enemy_1.body.setSize(95, 51, true);
+    
+        this.anims.create({
+            key: "enemyWalk",
+            frames: this.anims.generateFrameNumbers("enemy_1", { start: 24, end: 31 }),
+            frameRate: 6,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: "enemyAttack",
+            frames: this.anims.generateFrameNumbers("enemy_1", { start: 0, end: 7 }),
+            frameRate: 6,
+            repeat: -1
+        })
+
+        //this.physics.add.overlap(player_1, enemy_1, enemyAttack, null, this);
+
 };
 
 
 function update(){
 
-
+//jugador
 if (cursors.left.isDown) {
 player_1.setVelocityX(-160)
 player_1.anims.play("run", true);
@@ -177,5 +193,21 @@ if (cursors.up.isDown && player_1.body.touching.down) {
     player_1.setVelocityY(-350);
 };
 
+//enemigo
+if (enemy_1) {
+    if (player_1.x < enemy_1.x) {
+        enemy_1.setVelocityX(-50);
+        enemy_1.anims.play("enemyWalk", true);
+        enemy_1.flipX = true;
+    } else if (player_1.x > enemy_1.x) {
+        enemy_1.setVelocityX(50);
+        enemy_1.anims.play("enemyWalk", true);
+        enemy_1.flipX = false;
+    };
+};
 
+if ((Math.abs(player_1.x - enemy_1.x) < 5) && (Math.abs(enemy_1.y - player_1.y) < 5)) {
+    enemy_1.anims.play("enemyAttack", true);
+    playerHealth -= 10;
+};
 };

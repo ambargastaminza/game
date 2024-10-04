@@ -19,17 +19,17 @@ var config = {
 
 var game = new Phaser.Game(config);
 
-var platforms;
-
-var player_1;
-
-var enemy_1;
+var gameOver = false;
 
 var playerHealth = 100;
 
+var healthText;
+
 var enemyHealth = 100;
 
-var playerScore = 0;
+var score = 0;
+
+var scoreText;
 
 function preload() {
     //fondo
@@ -62,6 +62,18 @@ function preload() {
     this.load.image("ground2", "Assets/Platforms/4.png");
     this.load.image("ground3", "Assets/Platforms/5.png");
     this.load.image("ground4", "Assets/Platforms/6.png");
+
+    //slimes
+    this.load.spritesheet("slimes", "Assets/Slime/Slime.png", {
+        frameWidth: 32,
+        frameHeight: 32,
+    });
+
+    //Ojo volador
+    this.load.spritesheet("eye", "Assets/Eye/Eye.png", {
+        frameWidth: 150,
+        frameHeight: 78,
+    });
 };
 
 
@@ -148,7 +160,32 @@ function create(){
     });
     
 
-        //enemigos
+    //slimes
+    slimes = this.physics.add.group({
+        key: "slimes",
+        repeat: 11,
+        setXY: {x: 12, y: 0, stepX: 70}
+    });
+
+    this.anims.create({
+        key: "jump",
+        frames: this.anims.generateFrameNumbers("slimes", {start: 21, end: 26}),
+        frameRate: 10,
+        repeat: -1
+    });
+
+    slimes.children.iterate(function(child) {
+        child.setBounce(Phaser.Math.FloatBetween(0.4, 0.8));
+        child.body.setSize(16, 22, true);
+        child.anims.play("jump", true);
+    });
+
+    this.physics.add.collider(slimes, platforms);
+
+    this.physics.add.overlap(player_1, slimes, collectSlimes, null, true);
+
+
+        //Goblin
         enemy_1 = this.physics.add.sprite(600, 350, "enemy_1").setScale(2);
         enemy_1.setCollideWorldBounds(true);
         this.physics.add.collider(enemy_1, platforms);
@@ -168,12 +205,28 @@ function create(){
             repeat: -1
         })
 
-        //this.physics.add.overlap(player_1, enemy_1, enemyAttack, null, this);
+        //this.physics.add.overlap(player_1, enemy_1, enemyAttack, null, true);
+
+        scoreText = this.add.text(16, 16, "puntuación: 0", {fill: "white"});
+
+        healthText = this.add.text(16, 32, "salud: 100"), {fill: "white"};
+
+        //Ojo volador
+        
+        eye = this.physics.add.group();
+
+        this.physics.add.collider(eye, platforms);
+
+        this.physics.add.collider(player_1, eye, hitEye, null, this);
 
 };
 
 
 function update(){
+
+    if (gameOver) {
+        return;
+    }
 
 //jugador
 if (cursors.left.isDown) {
@@ -211,3 +264,26 @@ if ((Math.abs(player_1.x - enemy_1.x) < 5) && (Math.abs(enemy_1.y - player_1.y) 
     playerHealth -= 10;
 };
 };
+
+function collectSlimes(player_1, slimes) {
+    slimes.disableBody(true,true);
+    score += 10;
+    scoreText.setText("puntuación: " + score);
+    if (slimes.countActive(true) === 0) {
+        slimes.children.iterate(function(child) {
+            child.setBounce(Phaser.Math.FloatBetween(0.4, 0.8));
+            child.body.setSize(16, 22, true);
+            child.anims.play("jump", true);
+        });
+    };
+};
+
+function hitEye(player_1, eye) {
+    player_1.setTint("red");
+    playerHealth -= 20;
+    healthText.setText("salud :" + playerHealth);
+}
+
+if (playerHealth === 0){
+    gameOver = true;
+}

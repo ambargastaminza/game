@@ -265,17 +265,20 @@ if ((Math.abs(player_1.x - enemy_1.x) < 5) && (Math.abs(enemy_1.y - player_1.y) 
 };
 };
 
-function collectSlimes(player_1, slimes) {
-    slimes.disableBody(true,true);
+function collectSlimes(player_1, slime) {
+    slime.disableBody(true,true);
     score += 10;
     scoreText.setText("puntuación: " + score);
+
     if (slimes.countActive(true) === 0) {
         slimes.children.iterate(function(child) {
-            child.setBounce(Phaser.Math.FloatBetween(0.4, 0.8));
-            child.body.setSize(16, 22, true);
-            child.anims.play("jump", true);
+            child.enableBody(true, child.x, 0, true, true);
         });
     };
+
+    var x = (player_1.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
+
+    var eyeUp = eye.create(x);
 };
 
 function hitEye(player_1, eye) {

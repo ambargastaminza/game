@@ -21,11 +21,9 @@ var game = new Phaser.Game(config);
 
 var gameOver = false;
 
-var playerHealth = 100;
+var playerHealth = 1000;
 
 var healthText;
-
-var enemyHealth = 100;
 
 var score = 0;
 
@@ -43,7 +41,7 @@ function preload() {
     });
 
     //enemigo
-    this.load.spritesheet("enemy_1", "Assets/Goblin/Goblin.png", {
+    this.load.spritesheet("goblin", "Assets/Goblin/Goblin.png", {
         frameWidth: 151,
         frameHeight: 119
     });
@@ -70,7 +68,7 @@ function preload() {
     });
 
     //Ojo volador
-    this.load.spritesheet("eye", "Assets/Eye/Eye.png", {
+    this.load.spritesheet("eyeUp", "Assets/Eye/Eye.png", {
         frameWidth: 150,
         frameHeight: 78,
     });
@@ -147,11 +145,6 @@ function create(){
 
     cursors = this.input.keyboard.createCursorKeys();
 
-
-    //player_1.anims.play("stand");
-    //player_1.setVelocityX(0);
-
-
     player_1.body.setGravityY(300);
 
     this.input.keyboard.on('keydown-ENTER', function (event) {
@@ -184,41 +177,41 @@ function create(){
 
     this.physics.add.overlap(player_1, slimes, collectSlimes, null, true);
 
+        //Textos
+        scoreText = this.add.text(16, 16, "puntuación: 0", {fill: "white"});
 
-        //Goblin
-        enemy_1 = this.physics.add.sprite(600, 350, "enemy_1").setScale(2);
-        enemy_1.setCollideWorldBounds(true);
-        this.physics.add.collider(enemy_1, platforms);
-        enemy_1.body.setSize(95, 51, true);
-    
+        healthText = this.add.text(16, 32, "salud: 1000"), {fill: "white"};
+
+        //Enemigos
+        enemy = this.physics.add.group();
+
+        this.physics.add.collider(enemy, platforms);
+
+        this.physics.add.collider(player_1, enemy, hit, null, this);
+
+
+        //Eye
         this.anims.create({
-            key: "enemyWalk",
-            frames: this.anims.generateFrameNumbers("enemy_1", { start: 24, end: 31 }),
-            frameRate: 6,
+            key: "eyeFly",
+            frames: this.anims.generateFrameNumbers("eyeUp", {start: 0, end: 5}),
+            frameRate: 10,
             repeat: -1
         });
 
+        //Goblin
         this.anims.create({
-            key: "enemyAttack",
-            frames: this.anims.generateFrameNumbers("enemy_1", { start: 0, end: 7 }),
+            key: "goblinWalk",
+            frames: this.anims.generateFrameNumbers("goblin", { start: 24, end: 31 }),
+            frameRate: 6,
+            repeat: -1
+        });
+        
+        this.anims.create({
+            key: "goblinAttack",
+            frames: this.anims.generateFrameNumbers("goblin", { start: 0, end: 7 }),
             frameRate: 6,
             repeat: -1
         })
-
-        //this.physics.add.overlap(player_1, enemy_1, enemyAttack, null, true);
-
-        scoreText = this.add.text(16, 16, "puntuación: 0", {fill: "white"});
-
-        healthText = this.add.text(16, 32, "salud: 100"), {fill: "white"};
-
-        //Ojo volador
-        
-        eye = this.physics.add.group();
-
-        this.physics.add.collider(eye, platforms);
-
-        this.physics.add.collider(player_1, eye, hitEye, null, this);
-
 };
 
 
@@ -246,23 +239,6 @@ if (cursors.up.isDown && player_1.body.touching.down) {
     player_1.setVelocityY(-350);
 };
 
-//enemigo
-if (enemy_1) {
-    if (player_1.x < enemy_1.x) {
-        enemy_1.setVelocityX(-50);
-        enemy_1.anims.play("enemyWalk", true);
-        enemy_1.flipX = true;
-    } else if (player_1.x > enemy_1.x) {
-        enemy_1.setVelocityX(50);
-        enemy_1.anims.play("enemyWalk", true);
-        enemy_1.flipX = false;
-    };
-};
-
-if ((Math.abs(player_1.x - enemy_1.x) < 5) && (Math.abs(enemy_1.y - player_1.y) < 5)) {
-    enemy_1.anims.play("enemyAttack", true);
-    playerHealth -= 10;
-};
 };
 
 function collectSlimes(player_1, slime) {
@@ -273,16 +249,60 @@ function collectSlimes(player_1, slime) {
     if (slimes.countActive(true) === 0) {
         slimes.children.iterate(function(child) {
             child.enableBody(true, child.x, 0, true, true);
+            var genEnemy = (Math.random(0,1));
         });
     };
 
     var x = (player_1.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
 
-    var eyeUp = eye.create(x);
+    if (Math.random < 0.5) {
+    var eyeUp = enemy.create(x, 16, "eyeUp");
+    eyeUp.setBounce(0.5);
+    eyeUp.setCollideWorldBounds(true);
+    eyeUp.setVelocity(Phaser.Math.Between(-200, 200), 20);
+    eyeUp.body.setSize(42, 36, true);
+    eyeUp.anims.play("eyeFly");
+    } else {
+        var goblin = enemy.create(x, 400, "goblin");
+    goblin.setBounce(0);
+    goblin.setCollideWorldBounds(true);
+    goblin.setGravityY(300);
+    goblin.setVelocity(Phaser.Math.Between(-200, 200), 20);
+    goblin.body.setSize(33, 36, true);
+    goblin.anims.play("goblinWalk");
+    }
+
+    if (eyeUp) {
+        if (player_1.x < eyeUp.x) {
+            eyeUp.setVelocityX(-50);
+            eyeUp.anims.play("eyeFly", true);
+            eyeUp.flipX = true;
+        } else if (player_1.x > eyeUp.x) {
+            eyeUp.setVelocityX(50);
+            eyeUp.anims.play("eyeFly", true);
+            eyeUp.flipX = false;
+        };
+    };
+    
+    if (goblin) {
+        if (player_1.x < goblin.x) {
+            goblin.setVelocityX(-50);
+            goblin.anims.play("goblinWalk", true);
+            goblin.flipX = true;
+        } else if (player_1.x > goblin.x) {
+            goblin.setVelocityX(50);
+            goblin.anims.play("goblinWalk", true);
+            goblin.flipX = false;
+        };
+    };
 };
 
-function hitEye(player_1, eye) {
-    player_1.setTint("red");
+function hit(player_1, enemy) {
+    player_1.setTint("0xff0000");
+    setTimeout(() => {
+        player_1.clearTint();
+    }, 1000);
+    
     playerHealth -= 20;
     healthText.setText("salud :" + playerHealth);
 }
